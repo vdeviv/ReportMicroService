@@ -1,41 +1,31 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Report.Application.Services;
-using Report.Domain.Models;
+using Report.Domain.Interfaces;
 
 namespace Report.Api.Controllers;
 
+[Authorize] // Protege el endpoint
 [ApiController]
 [Route("api/[controller]")]
 public class ReportController : ControllerBase
 {
-    private readonly ReporteService _reporteService;
+    private readonly ReporteAppService _service;
+    private readonly IPdfService _pdfService;
 
-    public ReportController(ReporteService reporteService)
+    public ReportController(ReporteAppService service, IPdfService pdfService)
     {
-        _reporteService = reporteService;
+        _service = service;
+        _pdfService = pdfService;
     }
 
-    [HttpPost("generar")]
-    public ActionResult<VentaReporte> GenerarReporte([FromBody] ReportRequest request)
+    [HttpGet("venta/{saleId}/pdf")]
+    public async Task<IActionResult> GetReporte(string saleId, string clientId, int userId)
     {
-        // En un escenario real, aquí llamarías a tus Gateways en Infrastructure
-        // para traer los datos de Client.Api, Sale.Api y User.Api usando los IDs
+        // Sin pasar el token, el sistema lo inyectará solo en la capa de infraestructura
+        var reporteData = await _service.GenerarReporteCompleto(saleId, clientId, userId);
 
-        var reporte = _reporteService.CrearComprobanteVenta(
-            request.Venta,
-            request.Cliente,
-            request.Usuario,
-            request.Items
-        );
-
-        return Ok(reporte);
+        var pdfBytes = _pdfService.GenerarVentaPdf(reporteData);
+        return File(pdfBytes, "application/pdf", $"Comprobante_{saleId}.pdf");
     }
-}
-
-public class ReportRequest
-{
-    public dynamic Venta { get; set; }
-    public dynamic Cliente { get; set; }
-    public dynamic Usuario { get; set; }
-    public List<dynamic> Items { get; set; }
 }

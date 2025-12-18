@@ -7,30 +7,26 @@ using Report.Domain.Models;
 
 namespace Report.Application.Builders;
 
-public class VentaReporteBuilder : IVentaReporteBuilder
+public class VentaReporteBuilder
 {
     private VentaReporte _reporte = new();
 
     public void Reset() => _reporte = new VentaReporte();
 
-    public void SetEncabezado(DateTime fecha, string nit, string cliente)
+    public void SetDatosCliente(string nombre, string nit)
     {
-        _reporte.Fecha = fecha;
-        _reporte.ClientNit = nit;
-        _reporte.RazonSocial = cliente;
+        _reporte.RazonSocial = nombre;
+        _reporte.Nit = nit;
+        _reporte.Fecha = DateTime.Now;
     }
 
-    public void AgregarProductos(List<DetalleLinea> items)
+    public void SetProductos(List<DetalleLinea> items)
     {
         _reporte.Items = items;
+        _reporte.Total = items.Sum(i => i.Importe);
     }
 
-    public void SetPiePagina(string usuario, decimal total)
-    {
-        _reporte.UsuarioGenerador = usuario;
-        _reporte.Total = total;
-        _reporte.TotalEnLetras = $"Son {total:N2} Bolivianos"; // Aquí podrías usar una librería para convertir números a letras
-    }
+    public void SetUsuario(string username) => _reporte.UsuarioGenerador = username;
 
-    public VentaReporte GetReporte() => _reporte;
+    public VentaReporte Build() => _reporte;
 }
